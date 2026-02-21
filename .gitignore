@@ -1,0 +1,25 @@
+# OS / editor
+.DS_Store
+.vscode/
+.ipynb_checkpoints/
+
+# Data (genetics can be sensitive)
+data/raw/
+data/intermediate/
+data/processed/
+
+# Outputs
+results/
+*.vcf
+*.vcf.gz
+*.bed
+*.bim
+*.fam
+*.log
+*.nosex
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.envпше
