@@ -259,3 +259,196 @@ remove benign polymorphisms
 focus on variants with strong review status and clear disease association
 
 The next step involves structured prioritization and selection of a limited set of clinically relevant variants for detailed interpretation.
+
+### 4.4 Allele-Level Annotation and Genotype Filtering
+
+The initial ClinVar intersection was performed at the genomic position level, resulting in 69,522 overlapping records. However, positional overlap alone does not indicate that the individual carries the corresponding pathogenic allele.
+
+To obtain clinically meaningful results, ClinVar annotations were incorporated directly into the 23andMe VCF at the allele level using bcftools annotate.
+```bash
+bcftools annotate \
+  -a data/reference/clinvar.vcf.gz \
+  -c CHROM,POS,REF,ALT,INFO \
+  -O z -o data/intermediate/23andme_plus_clinvar.vcf.gz \
+  data/intermediate/23andme_snps_clean.vcf.gz
+
+tabix -p vcf data/intermediate/23andme_plus_clinvar.vcf.gz
+```
+
+Only variants with non-reference genotypes (GT ≠ 0/0) were retained for clinical prioritization.
+```bash
+bcftools view -i 'GT!="0/0" && INFO/CLNSIG!=""' \
+  -O z -o results/vcf/23andme_clinvar_nonref.vcf.gz \
+  data/intermediate/23andme_plus_clinvar.vcf.gz
+  ```
+
+#### Summary of Filtering Steps
+
+| Step | Description | Number of Variants |
+|------|------------|-------------------|
+| 1 | Position-level ClinVar overlap | 69,522 |
+| 2 | Allele-matched ClinVar annotations | 40,495 |
+| 3 | Non-reference genotypes (GT ≠ 0/0) | 3,939 |
+| 4 | P/LP (non-conflicting) | 12 |
+| 5 | Expert panel / guideline | 0 |
+
+This stepwise filtering reduced tens of thousands of positional matches to a small, interpretable set of clinically relevant candidate variants.
+
+---
+
+### 4.5 Pathogenic / Likely Pathogenic Variants (Non-reference Genotypes)
+
+A total of 12 non-conflicting Pathogenic or Likely Pathogenic variants were identified in heterozygous state (0/1).
+
+#### Distribution by ClinVar Review Status
+
+| Review Status | Count |
+|---------------|-------|
+| Multiple submitters, no conflicts | 4 |
+| Single submitter | 6 |
+| No assertion criteria provided | 2 |
+
+No variants were classified as reviewed by expert panel or practice guideline.
+
+### 4.6 Prioritized Candidate Variants
+
+The most reliable variants (multiple submitters, no conflicts) are listed below:
+
+| Gene | Variant ID | Genotype | Clinical Association | Review Status |
+|------|------------|----------|---------------------|---------------|
+| CFH | rs460897 | 0/1 | Atypical HUS susceptibility / AMD | Multiple submitters, no conflicts |
+| MYO7A | rs1052030 | 0/1 | Usher syndrome type 1 (AR) | Multiple submitters, no conflicts |
+| VWF | i5049301 | 0/1 | Von Willebrand disease type 2 | Multiple submitters, no conflicts |
+| CYP21A2 | i5005436 | 0/1 | Congenital adrenal hyperplasia (AR) | Multiple submitters, no conflicts |
+
+All variants were detected in heterozygous state (0/1).
+
+For autosomal recessive conditions (e.g., *MYO7A*, *CYP21A2*), the findings most likely represent carrier status rather than disease manifestation.
+
+The *VWF* variant may be clinically relevant depending on phenotype and inheritance pattern and would require clinical-grade validation.
+
+The *CFH* variant is associated with susceptibility phenotypes and does not imply deterministic disease development.
+
+### 4.7 Variants with Limited or Conflicting Evidence
+
+The remaining Pathogenic/Likely Pathogenic variants were supported by either single submitters or lacked assertion criteria in ClinVar.
+
+These variants include genes associated with:
+
+- SERPING1 (hereditary angioedema)
+- MAP1A (neurodevelopmental disorder)
+- SLC12A1 (renal tubular disorder, autosomal recessive)
+- NAGLU (Mucopolysaccharidosis type IIIB, autosomal recessive)
+- RGS9 (retinal dystrophy, autosomal recessive)
+- ESR1 (estrogen resistance susceptibility)
+
+Most of these findings were present in heterozygous state (0/1) and are consistent with potential carrier status for autosomal recessive disorders.
+
+Two variants were annotated with limited or ambiguous evidence:
+
+- UGT1A cluster variant (no assertion criteria provided)
+- CDKN2B (Likely_pathogenic | protective), indicating mixed or conflicting interpretation
+
+Due to limited evidence strength and lack of expert-panel review, these findings should be interpreted cautiously and require independent validation before any clinical consideration.
+
+## 5. Hypothetical Genome Editing Strategy
+
+To illustrate potential translational applications of genome analysis, a set of hypothetical CRISPR-based corrections was designed for selected Pathogenic/Likely Pathogenic variants identified in this dataset.
+
+These examples are theoretical and intended solely to demonstrate conceptual feasibility of allele correction strategies [1–3].
+
+---
+
+### 5.1 VWF (chr12:6128067 G>A)
+
+- Gene: VWF  
+- Genotype: 0/1  
+- Clinical association: Von Willebrand disease type 2  
+- Pathogenic allele: A  
+- Proposed correction: A → G (reference allele)
+
+**Editing strategy:**  
+A cytosine or adenine base editor could theoretically be used to revert the pathogenic nucleotide to the reference sequence without introducing double-strand breaks. Alternatively, homology-directed repair (HDR) could be employed in dividing cells [1].
+
+**Limitations:**  
+Clinical significance depends on variant-specific functional impact and inheritance pattern. Validation in a clinical sequencing setting and functional assays would be required.
+
+---
+
+### 5.2 CYP21A2 (chr6:32008312 C>T)
+
+- Gene: CYP21A2  
+- Genotype: 0/1  
+- Clinical association: Congenital adrenal hyperplasia (autosomal recessive)  
+- Pathogenic allele: T  
+- Proposed correction: T → C
+
+**Editing strategy:**  
+Single-base correction via base editing [2,3] or HDR-based CRISPR system.
+
+**Interpretation note:**  
+As the condition is autosomal recessive and detected in heterozygous state, this represents likely carrier status rather than active disease.
+
+---
+
+### 5.3 MYO7A (chr11:76853783 T>A)
+
+- Gene: MYO7A  
+- Genotype: 0/1  
+- Clinical association: Usher syndrome type 1 (autosomal recessive)  
+- Pathogenic allele: A  
+- Proposed correction: A → T
+
+**Editing strategy:**  
+Precision base editing targeting the mutant allele [2].
+
+**Limitations:**  
+Carrier state does not require therapeutic intervention; included here for conceptual demonstration only.
+
+---
+
+### 5.4 CFH (chr1:196716319 C>T)
+
+- Gene: CFH  
+- Genotype: 0/1  
+- Clinical association: Atypical hemolytic uremic syndrome susceptibility  
+- Pathogenic allele: T  
+- Proposed correction: T → C
+
+**Editing strategy:**  
+Base editing may theoretically revert the susceptibility-associated allele [2,3].
+
+**Important note:**  
+CFH variants often act as susceptibility modifiers rather than deterministic mutations. Therapeutic editing would require strong functional evidence.
+
+---
+
+### 5.5 SERPING1 (chr11:57365745 T>C)
+
+- Gene: SERPING1  
+- Genotype: 0/1  
+- Clinical association: Hereditary angioedema  
+- Pathogenic allele: C  
+- Proposed correction: C → T
+
+**Editing strategy:**  
+Allele-specific CRISPR correction with HDR template or base editing [1–3].
+
+**Limitations:**  
+Variant supported by single submitter; clinical relevance requires independent validation.
+
+---
+
+## References
+
+1. Jinek M, et al. (2012). A programmable dual-RNA–guided DNA endonuclease in adaptive bacterial immunity. *Science*, 337(6096), 816–821. https://doi.org/10.1126/science.1225829
+
+2. Komor AC, et al. (2016). Programmable editing of a target base in genomic DNA without double-stranded DNA cleavage. *Nature*, 533, 420–424. https://doi.org/10.1038/nature17946
+
+3. Anzalone AV, et al. (2019). Search-and-replace genome editing without double-strand breaks or donor DNA. *Nature*, 576, 149–157. https://doi.org/10.1038/s41586-019-1711-4
+
+4. Sadler JE. (2005). von Willebrand factor: two sides of a coin. *Journal of Thrombosis and Haemostasis*, 3(8), 1702–1709.
+
+5. Speiser PW, et al. (2018). Congenital adrenal hyperplasia due to steroid 21-hydroxylase deficiency. *Endocrine Reviews*, 39(4), 389–434.
+
+6. Weil D, et al. (1995). Defective myosin VIIA gene responsible for Usher syndrome type 1B. *Nature*, 374, 60–61.
